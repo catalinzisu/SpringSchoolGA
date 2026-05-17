@@ -8,7 +8,7 @@
 # 
 #--------------------------------------------------------------
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.10)
 
 #--------------------------------------------------------------
 # === 1 === 
@@ -229,22 +229,5 @@ file(COPY
 file(COPY
     ${CHRONO_RELEASE_PATH}/Irrlicht.dll
     DESTINATION ${RELEASE_PATH})
-	
-	
-file(COPY
-   ${CHRONO_DEBUG_PATH}/ChronoEngine.dll
-   DESTINATION ${DEBUG_PATH})
-	
-file(COPY
-    ${CHRONO_DEBUG_PATH}/ChronoEngine_irrlicht.dll
-    DESTINATION ${DEBUG_PATH})
-	
-file(COPY
-    ${CHRONO_DEBUG_PATH}/ChronoEngine_postprocess.dll
-    DESTINATION ${DEBUG_PATH})
-	
-file(COPY
-    ${CHRONO_DEBUG_PATH}/Irrlicht.dll
-    DESTINATION ${DEBUG_PATH})
 
 include_directories(ChronoProject_FinalGA ${ChronoProject_FinalGA_SOURCE_DIR}/inc)
