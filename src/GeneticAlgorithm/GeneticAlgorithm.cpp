@@ -1,4 +1,5 @@
 #include <GeneticAlgorithm/GeneticAlgorithm.h>
+#include <fstream>
 
 GeneticAlgorithm::GeneticAlgorithm(
 	std::function<IIndividual* ()> createIndividual,
@@ -202,4 +203,26 @@ void GeneticAlgorithm::WriteWinners(int epoch)
 		}
 		IOIndividualManager::WriteIndividualValueInFile(epoch + 1, m_fitnessValues[winner], true);
 	}
+
+	double bestFitness = m_fitnessValues[winner];
+	double sumFitness = 0.0;
+	double worstFitness = m_fitnessValues.begin()->second;
+
+	for (const auto& value : m_fitnessValues)
+	{
+		sumFitness += value.second;
+		if (value.second < worstFitness)
+		{
+			worstFitness = value.second;
+		}
+	}
+
+	double averageFitness = sumFitness / m_fitnessValues.size();
+
+	std::ofstream statsFile("fitness_stats_nou.csv", epoch == 0 ? std::ios::out : std::ios::app);
+	if (epoch == 0)
+	{
+		statsFile << "Epoch,Best Fitness,Average Fitness,Worst Fitness\n";
+	}
+	statsFile << epoch + 1 << "," << bestFitness << "," << averageFitness << "," << worstFitness << "\n";
 }

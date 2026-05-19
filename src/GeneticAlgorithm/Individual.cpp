@@ -81,9 +81,18 @@ double Individual::Evaluate()
 		return value;
 	}
 
-	double stressHeadroom = m_maximStress - maximStress;
+	double R = GetNumberOfRemovedElements();
+	double totalCubes = m_sizeOx * m_sizeOy * m_sizeOz;
+	
+	double removalRatio = pow(R / totalCubes, 1.5);
+	double stressRatio = (m_maximStress - maximStress) / m_maximStress;
 
-	value = (pow((GetNumberOfRemovedElements() + 1), 2)) * stressHeadroom;
+	if (removalRatio == 0.0)
+	{
+		return value;
+	}
+
+	value = removalRatio * stressRatio;
 
 	return value;
 }
