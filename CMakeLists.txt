@@ -17,54 +17,13 @@ cmake_minimum_required(VERSION 3.10)
 
 project(ChronoProject_FinalGA)
 
-#--------------------------------------------------------------
-# === 2 ===
-# Find the Chrono package and any REQUIRED or OPTIONAL modules
-# by invoking the find_package function in CONFIG mode:
-#    find_package(Chrono
-#	              COMPONENTS req_module1 req_module1 ...
-#	              OPTIONAL opt_module1 opt_module2 ...
-#                 CONFIG)
-# The following Chrono modules can be requested (their names
-# are case insensitive): Cascade, Cosimulation, FEA, Irrlicht,
-# Matlab, Parallel, Postprocess, Python, Vehicle.
-# 
-# Note that you will have to set the variable Chrono_DIR to 
-# specify the location of the ChronoConfig.cmake script, if
-# it is not in its default install location.
-# Chrono_DIR can be either a Chrono build tree or a Chrono install tree.
-# 
-# The following variables are set and can be used further down:
-# CHRONO_FOUND
-#   set to true if Chrono and all required components were found
-# CHRONO_C_FLAGS
-# CHRONO_CXX_FLAGS
-#   C and C++ compilation flags
-# CHRONO_INCLUDE_DIRS
-#   additional paths for included headers
-# CHRONO_LIBRARIES
-#   list of required libraries (with full path)
-# CHRONO_LINKER_FLAGS
-#   additional linker flags
-# CHRONO_DLLS
-#   list of all DLL dependencies (with full path)
-# CHRONO_DATA_DIR
-#   path to the Chrono data make_directory
-# 
-# In addition, for each requested component [COMPONENT], the
-# following variable is set to true (ON) or false (OFF):
-# CHRONO_[COMPONENT]_FOUND
-# 
-# In this example, we only request the Irrlicht module (required)
-#--------------------------------------------------------------
+# Show CHRONO_LIB_PATH only on macOS (so it appears in cmake-gui on macOS even
+# if Chrono isn't found and the configure aborts). This avoids showing it on Windows/Linux.
 
-find_package(Chrono
-             COMPONENTS Irrlicht
-             CONFIG)
 
-find_package(Chrono
-             COMPONENTS Irrlicht Postprocessing
-             CONFIG)
+# CHRONO_LIB_PATH will be shown only on macOS; it is declared above inside the if(APPLE) block.
+
+find_package(Chrono REQUIRED COMPONENTS Irrlicht Postprocess CONFIG)
 
 #--------------------------------------------------------------
 # Return now if Chrono or a required component was not found.
@@ -89,16 +48,12 @@ endif()
 # to run:
 #     start_demo.sh myexe.app
 
-if(APPLE)
-    set(CMAKE_MACOSX_BUNDLE ON)
-endif()
-
 #--------------------------------------------------------------
 # Add path to Chrono headers and to headers of all dependencies
 # of the requested modules.
 #--------------------------------------------------------------
 
-include_directories(${CHRONO_INCLUDE_DIRS})
+# include directories are added to the target after the executable is created
 
 #--------------------------------------------------------------
 # Tweaks to disable some warnings with MSVC
@@ -183,10 +138,13 @@ endforeach()
 #--------------------------------------------------------------
 
 set_target_properties(ChronoProject_FinalGA PROPERTIES 
-	    COMPILE_FLAGS "${CHRONO_CXX_FLAGS} ${EXTRA_COMPILE_FLAGS}"
-	    COMPILE_DEFINITIONS "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\""
-	    LINK_FLAGS "${CHRONO_LINKER_FLAGS}"
-		CXX_STANDARD 17)
+    COMPILE_FLAGS "${CHRONO_CXX_FLAGS} ${EXTRA_COMPILE_FLAGS}"
+    LINK_FLAGS "${CHRONO_LINKER_FLAGS}"
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON)
+    
+# Define CHRONO_DATA_DIR for the target (same as the sample architecture)
+target_compile_definitions(ChronoProject_FinalGA PRIVATE CHRONO_DATA_DIR="${CHRONO_DATA_DIR}")
 
 #--------------------------------------------------------------
 # Link to Chrono libraries and dependency libraries
@@ -194,40 +152,138 @@ set_target_properties(ChronoProject_FinalGA PROPERTIES
 
 target_link_libraries(ChronoProject_FinalGA ${CHRONO_LIBRARIES})
 
+# Add include directories for the target (project headers + Chrono includes)
+target_include_directories(ChronoProject_FinalGA PRIVATE ${INCROOT} ${CHRONO_INCLUDE_DIRS})
+
 #--------------------------------------------------------------
 # === 4 (OPTIONAL) ===
 # 
 # Optionally, add a custom command for copying all Chrono and
 # dependency DLLs to the appropriate binary output folder.
 # This function has effect only on Windows.
-# 
+#
 # Note that you must first set EXECUTABLE_OUTPUT_PATH
 # (this can simply be ${CMAKE_BINARY_DIR}, like in this example)
 #--------------------------------------------------------------
 
-set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
-add_DLL_copy_command("${CHRONO_DLLS}")
+if(MSVC)
+    set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
+    add_DLL_copy_command("${CHRONO_DLLS}")
 
-set (DEBUG_PATH ${ChronoProject_FinalGA_SOURCE_DIR}/build/Debug)
-set (CHRONO_DEBUG_PATH ${Chrono_DIR}/../bin/Debug)
+    set (DEBUG_PATH ${ChronoProject_FinalGA_SOURCE_DIR}/build/Debug)
+    set (CHRONO_DEBUG_PATH ${Chrono_DIR}/../bin/Debug)
 
-set (RELEASE_PATH ${ChronoProject_FinalGA_SOURCE_DIR}/build/Release)
-set (CHRONO_RELEASE_PATH ${Chrono_DIR}/../bin/Release)
+    set (RELEASE_PATH ${ChronoProject_FinalGA_SOURCE_DIR}/build/Release)
+    set (CHRONO_RELEASE_PATH ${Chrono_DIR}/../bin/Release)
 
-file(COPY
-   ${CHRONO_RELEASE_PATH}/ChronoEngine.dll
-   DESTINATION ${RELEASE_PATH})
-	
-file(COPY
-    ${CHRONO_RELEASE_PATH}/ChronoEngine_irrlicht.dll
-    DESTINATION ${RELEASE_PATH})
-	
-file(COPY
-    ${CHRONO_RELEASE_PATH}/ChronoEngine_postprocess.dll
-    DESTINATION ${RELEASE_PATH})
-	
-file(COPY
-    ${CHRONO_RELEASE_PATH}/Irrlicht.dll
-    DESTINATION ${RELEASE_PATH})
+    file(COPY
+       ${CHRONO_RELEASE_PATH}/ChronoEngine.dll
+       DESTINATION ${RELEASE_PATH})
+
+    file(COPY
+        ${CHRONO_RELEASE_PATH}/ChronoEngine_irrlicht.dll
+        DESTINATION ${RELEASE_PATH})
+
+    file(COPY
+        ${CHRONO_RELEASE_PATH}/ChronoEngine_postprocess.dll
+        DESTINATION ${RELEASE_PATH})
+
+    file(COPY
+        ${CHRONO_RELEASE_PATH}/Irrlicht.dll
+        DESTINATION ${RELEASE_PATH})
+endif()
 
 include_directories(ChronoProject_FinalGA ${ChronoProject_FinalGA_SOURCE_DIR}/inc)
+
+# --------------------
+# macOS-specific settings for the target (bundle, rpath, copy dylibs)
+# Added after the target is created and linked.
+# --------------------
+if(APPLE)
+    # Prefer creating an app bundle for macOS and make the executable look in its own folder at runtime
+    set(CMAKE_MACOSX_BUNDLE ON)
+    set_target_properties(ChronoProject_FinalGA PROPERTIES BUILD_RPATH "@executable_path")
+
+    # Expose CHRONO_LIB_PATH in cmake-gui on macOS so the user can pick where Chrono dylibs live.
+    # The variable is a PATH cache entry so it appears in graphical frontends like cmake-gui / ccmake.
+    set(CHRONO_LIB_PATH "" CACHE PATH "Path to Chrono dylibs directory (contains libChronoEngine.dylib). Set via cmake-gui on macOS.")
+
+    # Simple flow: require the user to set CHRONO_LIB_PATH. If it's unset, skip post-build copy.
+    if(NOT CHRONO_LIB_PATH)
+        message(STATUS "CHRONO_LIB_PATH not set. Set CHRONO_LIB_PATH in cmake-gui to the directory containing Chrono dylibs (e.g. /Users/you/chrono-install/lib). Post-build copy will be skipped.")
+    else()
+        message(STATUS "Using Chrono dylib directory: ${CHRONO_LIB_PATH}")
+
+        # Create a minimal Info.plist for the macOS bundle (harmless if a user already provides one)
+        set(_plist "${CMAKE_BINARY_DIR}/Info.plist")
+        file(WRITE ${_plist}
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n"
+            "<plist version=\"1.0\">\n"
+            "<dict>\n"
+            "    <key>CFBundleName</key>\n"
+            "    <string>${PROJECT_NAME}</string>\n"
+            "    <key>NSHighResolutionCapable</key>\n"
+            "    <true/>\n"
+            "</dict>\n"
+            "</plist>\n"
+        )
+
+        set_target_properties(ChronoProject_FinalGA PROPERTIES
+            MACOSX_BUNDLE TRUE
+            MACOSX_BUNDLE_INFO_PLIST ${_plist}
+        )
+
+        # Explicit per-file copies from the user-provided CHRONO_LIB_PATH. Keep simple and explicit.
+        if(EXISTS "${CHRONO_LIB_PATH}/libChronoEngine.dylib")
+            add_custom_command(TARGET ChronoProject_FinalGA POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${CHRONO_LIB_PATH}/libChronoEngine.dylib" $<TARGET_FILE_DIR:ChronoProject_FinalGA>
+            )
+            message(STATUS "Will copy libChronoEngine.dylib from ${CHRONO_LIB_PATH}")
+        else()
+            message(WARNING "libChronoEngine.dylib not found at ${CHRONO_LIB_PATH}; it will not be copied.")
+        endif()
+
+        if(EXISTS "${CHRONO_LIB_PATH}/libChronoEngine_postprocess.dylib")
+            add_custom_command(TARGET ChronoProject_FinalGA POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${CHRONO_LIB_PATH}/libChronoEngine_postprocess.dylib" $<TARGET_FILE_DIR:ChronoProject_FinalGA>
+            )
+            message(STATUS "Will copy libChronoEngine_postprocess.dylib from ${CHRONO_LIB_PATH}")
+        else()
+            message(WARNING "libChronoEngine_postprocess.dylib not found at ${CHRONO_LIB_PATH}; it will not be copied.")
+        endif()
+
+        if(EXISTS "${CHRONO_LIB_PATH}/libChronoEngine_irrlicht.dylib")
+            add_custom_command(TARGET ChronoProject_FinalGA POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${CHRONO_LIB_PATH}/libChronoEngine_irrlicht.dylib" $<TARGET_FILE_DIR:ChronoProject_FinalGA>
+            )
+            message(STATUS "Will copy libChronoEngine_irrlicht.dylib from ${CHRONO_LIB_PATH}")
+        else()
+            message(WARNING "libChronoEngine_irrlicht.dylib not found at ${CHRONO_LIB_PATH}; it will not be copied.")
+        endif()
+
+        if(EXISTS "${CHRONO_LIB_PATH}/libChronoModels_robot.dylib")
+            add_custom_command(TARGET ChronoProject_FinalGA POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${CHRONO_LIB_PATH}/libChronoModels_robot.dylib" $<TARGET_FILE_DIR:ChronoProject_FinalGA>
+            )
+            message(STATUS "Will copy libChronoModels_robot.dylib from ${CHRONO_LIB_PATH}")
+        else()
+            message(WARNING "libChronoModels_robot.dylib not found at ${CHRONO_LIB_PATH}; it will not be copied.")
+        endif()
+
+        # Optional: copy Homebrew-provided Irrlicht if present at the common location
+        if(EXISTS "/opt/homebrew/lib/libIrrlicht.dylib")
+            add_custom_command(TARGET ChronoProject_FinalGA POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "/opt/homebrew/lib/libIrrlicht.dylib" $<TARGET_FILE_DIR:ChronoProject_FinalGA>
+            )
+            message(STATUS "Will copy /opt/homebrew/lib/libIrrlicht.dylib into the bundle")
+        else()
+            message(WARNING "/opt/homebrew/lib/libIrrlicht.dylib not found; Irrlicht will not be copied automatically.")
+        endif()
+    endif()
+endif()
