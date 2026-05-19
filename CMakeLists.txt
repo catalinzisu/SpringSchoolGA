@@ -223,8 +223,18 @@ if(APPLE)
             "<dict>\n"
             "    <key>CFBundleName</key>\n"
             "    <string>${PROJECT_NAME}</string>\n"
+            "    <key>CFBundleExecutable</key>\n"
+            "    <string>${PROJECT_NAME}</string>\n"
+            "    <key>CFBundleIdentifier</key>\n"
+            "    <string>com.yourcompany.${PROJECT_NAME}</string>\n"
+            "    <key>CFBundleShortVersionString</key>\n"
+            "    <string>1.0</string>\n"
+            "    <key>CFBundleVersion</key>\n"
+            "    <string>1</string>\n"
+            "    <key>NSPrincipalClass</key>\n"
+            "    <string>NSApplication</string>\n"
             "    <key>NSHighResolutionCapable</key>\n"
-            "    <true/>\n"
+            "    <false/>\n"
             "</dict>\n"
             "</plist>\n"
         )
@@ -233,7 +243,6 @@ if(APPLE)
             MACOSX_BUNDLE TRUE
             MACOSX_BUNDLE_INFO_PLIST ${_plist}
         )
-
         # Explicit per-file copies from the user-provided CHRONO_LIB_PATH. Keep simple and explicit.
         if(EXISTS "${CHRONO_LIB_PATH}/libChronoEngine.dylib")
             add_custom_command(TARGET ChronoProject_FinalGA POST_BUILD
