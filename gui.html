@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GA Structural Optimizer — Config & Visualization</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-primary: #0a0f2e;
+    --bg-card: #111640;
+    --bg-input: #181e4a;
+    --border: #2a3070;
+    --border-focus: #00c8a0;
+    --accent: #00c8a0;
+    --accent-dim: #00c8a033;
+    --accent-glow: #00c8a066;
+    --text-primary: #e8ecf4;
+    --text-secondary: #8892b0;
+    --text-muted: #5a6380;
+    --error: #ff4d6a;
+    --error-bg: #ff4d6a18;
+    --chart-best: #00c8a0;
+    --chart-avg: #4a9eff;
+    --chart-worst: #ff4d6a;
+    --profile-fitness: #00c8a0;
+    --profile-selection: #4a9eff;
+    --profile-crossover: #ffb84d;
+    --profile-mutation: #ff4d6a;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.3);
+    --transition: 0.25s cubic-bezier(.4,0,.2,1);
+  }
+
+  html { font-size: 15px; }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* === HEADER === */
+  .header {
+    padding: 1.6rem 2.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg, var(--bg-primary), #0e1438);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+
+  .header-icon {
+    width: 42px; height: 42px;
+    background: linear-gradient(135deg, var(--accent), #00a886);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem;
+    box-shadow: 0 0 20px var(--accent-dim);
+  }
+
+  .header h1 {
+    font-size: 1.35rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  .header h1 span {
+    color: var(--accent);
+  }
+
+  .header-sub {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-left: auto;
+    font-weight: 400;
+  }
+
+  /* === LAYOUT === */
+  .main {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 0;
+    min-height: calc(100vh - 75px);
+  }
+
+  /* === LEFT PANEL === */
+  .panel-left {
+    border-right: 1px solid var(--border);
+    padding: 1.8rem;
+    overflow-y: auto;
+    max-height: calc(100vh - 75px);
+    background: var(--bg-card);
+  }
+
+  .panel-left::-webkit-scrollbar { width: 5px; }
+  .panel-left::-webkit-scrollbar-track { background: transparent; }
+  .panel-left::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+  .section-title {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border), transparent);
+  }
+
+  .field-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .field-group.full { grid-template-columns: 1fr; }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .field.span-2 { grid-column: span 2; }
+
+  .field label {
+    font-size: 0.73rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    letter-spacing: 0.02em;
+  }
+
+  .field input {
+    background: var(--bg-input);
+    border: 1.5px solid var(--border);
+    color: var(--text-primary);
+    padding: 0.6rem 0.8rem;
+    border-radius: var(--radius-sm);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 500;
+    transition: var(--transition);
+    outline: none;
+    width: 100%;
+  }
+
+  .field input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+
+  .field input.error {
+    border-color: var(--error);
+    background: var(--error-bg);
+    box-shadow: 0 0 0 3px rgba(255,77,106,0.12);
+  }
+
+  .field .error-msg {
+    font-size: 0.68rem;
+    color: var(--error);
+    font-weight: 500;
+    display: none;
+  }
+
+  .field input.error + .error-msg { display: block; }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 0.5rem 0 1.2rem;
+  }
+
+  .btn-export {
+    width: 100%;
+    padding: 0.85rem;
+    background: linear-gradient(135deg, var(--accent), #00a886);
+    color: #0a0f2e;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-export::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+    transition: 0.5s;
+  }
+
+  .btn-export:hover::before { left: 100%; }
+
+  .btn-export:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 24px var(--accent-dim);
+  }
+
+  .btn-export:active { transform: translateY(0); }
+
+  .export-feedback {
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--accent);
+    margin-top: 0.6rem;
+    opacity: 0;
+    transition: var(--transition);
+    font-weight: 500;
+  }
+
+  .export-feedback.show { opacity: 1; }
+
+  /* === RIGHT PANEL === */
+  .panel-right {
+    padding: 1.8rem 2.2rem;
+    overflow-y: auto;
+    max-height: calc(100vh - 75px);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .panel-right::-webkit-scrollbar { width: 5px; }
+  .panel-right::-webkit-scrollbar-track { background: transparent; }
+  .panel-right::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+  /* === DROP ZONE === */
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+    text-align: center;
+    transition: var(--transition);
+    cursor: pointer;
+    position: relative;
+    background: var(--bg-card);
+  }
+
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--accent);
+    background: linear-gradient(135deg, var(--accent-dim), transparent);
+    box-shadow: 0 0 30px var(--accent-dim);
+  }
+
+  .drop-zone-icon {
+    font-size: 2.2rem;
+    margin-bottom: 0.7rem;
+    opacity: 0.7;
+  }
+
+  .drop-zone-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+  }
+
+  .drop-zone-sub {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  .drop-zone-sub strong {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .drop-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .loaded-files {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-top: 0.8rem;
+  }
+
+  .file-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--accent-dim);
+    color: var(--accent);
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.73rem;
+    font-weight: 600;
+    border: 1px solid var(--accent);
+  }
+
+  /* === CHART CARDS === */
+  .chart-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    display: none;
+    animation: fadeSlideUp 0.4s ease-out;
+  }
+
+  .chart-card.visible { display: block; }
+
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  .chart-title {
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .chart-title-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .chart-stats {
+    display: flex;
+    gap: 1.2rem;
+  }
+
+  .chart-stat {
+    text-align: right;
+  }
+
+  .chart-stat-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  .chart-stat-value {
+    font-size: 1rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .chart-wrapper {
+    position: relative;
+    height: 320px;
+  }
+
+  .chart-wrapper canvas {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  /* === EMPTY STATE === */
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    gap: 0.8rem;
+    min-height: 300px;
+  }
+
+  .empty-state-icon { font-size: 3rem; opacity: 0.4; }
+  .empty-state-text { font-size: 0.9rem; font-weight: 500; }
+  .empty-state-sub { font-size: 0.78rem; }
+
+  /* === TOOLTIP OVERRIDES === */
+  .chartjs-tooltip { font-family: 'Inter', sans-serif !important; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-icon">🧬</div>
+  <h1>GA Structural <span>Optimizer</span></h1>
+  <span class="header-sub">Spring School — Structural Optimization with Genetic Algorithms</span>
+</header>
+
+<main class="main">
+  <!-- LEFT: Configuration Panel -->
+  <aside class="panel-left">
+    <div class="section-title">Algorithm Parameters</div>
+
+    <div class="field-group">
+      <div class="field">
+        <label for="epochs">Number of Epochs</label>
+        <input type="text" id="epochs" value="5" data-key="NUMBER_OF_EPOCHS">
+        <span class="error-msg">Required (integer)</span>
+      </div>
+      <div class="field">
+        <label for="popSize">Population Size</label>
+        <input type="text" id="popSize" value="50" data-key="NUMBER_OF_INDIVIDUALS">
+        <span class="error-msg">Required (integer)</span>
+      </div>
+      <div class="field">
+        <label for="crossProb">Crossover Probability</label>
+        <input type="text" id="crossProb" value="0.5" data-key="CROSSOVER_PROBABILITY">
+        <span class="error-msg">Required (0–1)</span>
+      </div>
+      <div class="field">
+        <label for="mutProb">Mutation Probability</label>
+        <input type="text" id="mutProb" value="0.01" data-key="MUTATION_PROBABILITY">
+        <span class="error-msg">Required (0–1)</span>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="section-title">Grid Dimensions</div>
+
+    <div class="field-group">
+      <div class="field">
+        <label for="sizeOx">Grid Size Ox</label>
+        <input type="text" id="sizeOx" value="10" data-key="SIZE_OX">
+        <span class="error-msg">Required (integer)</span>
+      </div>
+      <div class="field">
+        <label for="sizeOy">Grid Size Oy</label>
+        <input type="text" id="sizeOy" value="5" data-key="SIZE_OY">
+        <span class="error-msg">Required (integer)</span>
+      </div>
+      <div class="field">
+        <label for="sizeOz">Grid Size Oz</label>
+        <input type="text" id="sizeOz" value="3" data-key="SIZE_OZ">
+        <span class="error-msg">Required (integer)</span>
+      </div>
+      <div class="field">
+        <label for="elemSize">Element Size</label>
+        <input type="text" id="elemSize" value="0.1" data-key="ELEMENT_SIZE">
+        <span class="error-msg">Required (number)</span>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="section-title">Material Properties</div>
+
+    <div class="field-group full">
+      <div class="field">
+        <label for="maxStress">Max Stress Allowed (Pa)</label>
+        <input type="text" id="maxStress" value="4.5e8" data-key="MAXIM_STRESS">
+        <span class="error-msg">Required (number)</span>
+      </div>
+      <div class="field">
+        <label for="youngMod">Young Modulus (Pa)</label>
+        <input type="text" id="youngMod" value="1e21" data-key="YOUNG_MODULUS">
+        <span class="error-msg">Required (number)</span>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <button class="btn-export" id="btnExport" onclick="exportConfig()">
+      <span>📁</span> Export Config
+    </button>
+    <div class="export-feedback" id="exportFeedback">✓ algorithm_settings.txt downloaded</div>
+  </aside>
+
+  <!-- RIGHT: Visualization Panel -->
+  <section class="panel-right">
+    <div class="section-title">Results Visualization</div>
+
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="fileInput" accept=".csv" multiple>
+      <div class="drop-zone-icon">📊</div>
+      <div class="drop-zone-title">Drop CSV files here</div>
+      <div class="drop-zone-sub">
+        Upload <strong>fitness_stats.csv</strong> and/or <strong>profiling_stats.csv</strong><br>
+        or click to browse
+      </div>
+      <div class="loaded-files" id="loadedFiles"></div>
+    </div>
+
+    <!-- Fitness Chart -->
+    <div class="chart-card" id="fitnessCard">
+      <div class="chart-header">
+        <div class="chart-title">
+          <span class="chart-title-dot" style="background:var(--chart-best)"></span>
+          Fitness Evolution
+        </div>
+        <div class="chart-stats">
+          <div class="chart-stat">
+            <div class="chart-stat-label">Peak Best</div>
+            <div class="chart-stat-value" id="statPeakBest" style="color:var(--chart-best)">—</div>
+          </div>
+          <div class="chart-stat">
+            <div class="chart-stat-label">Final Avg</div>
+            <div class="chart-stat-value" id="statFinalAvg" style="color:var(--chart-avg)">—</div>
+          </div>
+        </div>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="fitnessChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Profiling Chart -->
+    <div class="chart-card" id="profilingCard">
+      <div class="chart-header">
+        <div class="chart-title">
+          <span class="chart-title-dot" style="background:var(--profile-fitness)"></span>
+          Execution Profiling
+        </div>
+        <div class="chart-stats">
+          <div class="chart-stat">
+            <div class="chart-stat-label">Avg Total</div>
+            <div class="chart-stat-value" id="statAvgTotal" style="color:var(--accent)">—</div>
+          </div>
+          <div class="chart-stat">
+            <div class="chart-stat-label">Bottleneck</div>
+            <div class="chart-stat-value" id="statBottleneck" style="color:var(--profile-crossover)">—</div>
+          </div>
+        </div>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="profilingChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div class="empty-state" id="emptyState">
+      <div class="empty-state-icon">📈</div>
+      <div class="empty-state-text">No results loaded yet</div>
+      <div class="empty-state-sub">Upload CSV files above to visualize results</div>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ============================================================
+   CHART.JS GLOBAL DEFAULTS
+   ============================================================ */
+if (window.Chart) {
+  Chart.defaults.color = '#8892b0';
+  Chart.defaults.borderColor = '#2a307044';
+  Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+  Chart.defaults.font.size = 12;
+  Chart.defaults.plugins.tooltip.backgroundColor = '#181e4a';
+  Chart.defaults.plugins.tooltip.titleColor = '#e8ecf4';
+  Chart.defaults.plugins.tooltip.bodyColor = '#8892b0';
+  Chart.defaults.plugins.tooltip.borderColor = '#2a3070';
+  Chart.defaults.plugins.tooltip.borderWidth = 1;
+  Chart.defaults.plugins.tooltip.cornerRadius = 8;
+  Chart.defaults.plugins.tooltip.padding = 10;
+} else {
+  console.error("Chart.js failed to load!");
+}
+
+let fitnessChartInstance = null;
+let profilingChartInstance = null;
+
+/* ============================================================
+   CONFIG EXPORT
+   ============================================================ */
+function exportConfig() {
+  const inputs = document.querySelectorAll('.panel-left input[data-key]');
+  let hasError = false;
+
+  inputs.forEach(input => {
+    const val = input.value.trim();
+    if (val === '' || isNaN(Number(val))) {
+      input.classList.add('error');
+      hasError = true;
+    } else {
+      input.classList.remove('error');
+    }
+  });
+
+  if (hasError) return;
+
+  let content = '';
+  inputs.forEach(input => {
+    content += `${input.dataset.key} = ${input.value.trim()}\n`;
+  });
+
+  const blob = new Blob([content], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'algorithm_settings.txt';
+  a.click();
+  URL.revokeObjectURL(a.href);
+
+  const fb = document.getElementById('exportFeedback');
+  fb.classList.add('show');
+  setTimeout(() => fb.classList.remove('show'), 2500);
+}
+
+// Clear error on input
+document.querySelectorAll('.panel-left input').forEach(input => {
+  input.addEventListener('input', () => input.classList.remove('error'));
+});
+
+/* ============================================================
+   FILE UPLOAD / DRAG & DROP
+   ============================================================ */
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+['dragenter', 'dragover'].forEach(evt => {
+  dropZone.addEventListener(evt, e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+});
+['dragleave', 'drop'].forEach(evt => {
+  dropZone.addEventListener(evt, e => { e.preventDefault(); dropZone.classList.remove('drag-over'); });
+});
+
+dropZone.addEventListener('drop', e => handleFiles(e.dataTransfer.files));
+fileInput.addEventListener('change', e => handleFiles(e.target.files));
+
+function handleFiles(files) {
+  const loadedDiv = document.getElementById('loadedFiles');
+
+  for (const file of files) {
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      alert(`Fișierul ${file.name} nu are extensia .csv!`);
+      continue;
+    }
+
+    const reader = new FileReader();
+    reader.onload = e => {
+      const text = e.target.result;
+      const lines = text.split('\n');
+      let firstLine = '';
+      for (let i = 0; i < lines.length; i++) {
+         if (lines[i].trim() !== '') {
+            firstLine = lines[i].trim();
+            break;
+         }
+      }
+
+      console.log("Prima linie din fișier:", firstLine);
+
+      if (firstLine.includes('Best Fitness') || firstLine.includes('Average Fitness')) {
+        parseFitnessCSV(text);
+        addBadge(loadedDiv, file.name, 'fitness');
+      } else if (firstLine.includes('FitnessTime') || firstLine.includes('SelectionTime')) {
+        parseProfilingCSV(text);
+        addBadge(loadedDiv, file.name, 'profiling');
+      } else {
+        alert(`Fișierul ${file.name} nu are coloanele așteptate!\nFormat așteptat: 'Best Fitness' sau 'FitnessTime'.\nCe am găsit: '${firstLine}'`);
+      }
+
+      updateEmptyState();
+    };
+    reader.onerror = () => { alert("Eroare la citirea fișierului " + file.name); };
+    reader.readAsText(file);
+  }
+}
+
+function addBadge(container, name, type) {
+  // Remove existing badge of same type
+  container.querySelectorAll(`[data-type="${type}"]`).forEach(b => b.remove());
+  const badge = document.createElement('span');
+  badge.className = 'file-badge';
+  badge.dataset.type = type;
+  badge.textContent = `✓ ${name}`;
+  container.appendChild(badge);
+}
+
+function updateEmptyState() {
+  const fc = document.getElementById('fitnessCard');
+  const pc = document.getElementById('profilingCard');
+  const es = document.getElementById('emptyState');
+  const anyVisible = fc.classList.contains('visible') || pc.classList.contains('visible');
+  es.style.display = anyVisible ? 'none' : '';
+}
+
+/* ============================================================
+   PARSE & RENDER: FITNESS CSV
+   ============================================================ */
+function parseFitnessCSV(text) {
+  const lines = text.trim().split('\n');
+  const epochs = [], best = [], avg = [], worst = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(',').map(c => c.trim());
+    if (cols.length < 4) continue;
+    epochs.push(parseInt(cols[0]));
+    best.push(parseFloat(cols[1]));
+    avg.push(parseFloat(cols[2]));
+    worst.push(parseFloat(cols[3]));
+  }
+
+  // Stats
+  const peakBest = Math.max(...best);
+  const finalAvg = avg[avg.length - 1];
+  document.getElementById('statPeakBest').textContent = peakBest.toExponential(3);
+  document.getElementById('statFinalAvg').textContent = finalAvg.toExponential(3);
+
+  renderFitnessChart(epochs, best, avg, worst, peakBest);
+}
+
+function renderFitnessChart(epochs, best, avg, worst, peakBest) {
+  const card = document.getElementById('fitnessCard');
+  card.classList.add('visible');
+
+  if (fitnessChartInstance) fitnessChartInstance.destroy();
+
+  const ctx = document.getElementById('fitnessChart').getContext('2d');
+
+  // Find peak index
+  const peakIdx = best.indexOf(peakBest);
+
+  fitnessChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: epochs,
+      datasets: [
+        {
+          label: 'Best Fitness',
+          data: best,
+          borderColor: '#00c8a0',
+          backgroundColor: '#00c8a018',
+          borderWidth: 2.5,
+          pointRadius: 0,
+          pointHoverRadius: 5,
+          pointHoverBackgroundColor: '#00c8a0',
+          fill: false,
+          tension: 0.3,
+          order: 1
+        },
+        {
+          label: 'Average Fitness',
+          data: avg,
+          borderColor: '#4a9eff',
+          backgroundColor: '#4a9eff18',
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHoverRadius: 5,
+          pointHoverBackgroundColor: '#4a9eff',
+          fill: false,
+          tension: 0.3,
+          order: 2
+        },
+        {
+          label: 'Worst Fitness',
+          data: worst,
+          borderColor: '#ff4d6a',
+          backgroundColor: '#ff4d6a18',
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHoverRadius: 5,
+          pointHoverBackgroundColor: '#ff4d6a',
+          fill: false,
+          tension: 0.3,
+          order: 3
+        },
+        {
+          // Shaded area between best and worst
+          label: '_range',
+          data: best,
+          borderColor: 'transparent',
+          backgroundColor: '#00c8a00d',
+          pointRadius: 0,
+          fill: '+1',
+          tension: 0.3,
+          order: 4
+        },
+        {
+          label: '_range_bottom',
+          data: worst,
+          borderColor: 'transparent',
+          backgroundColor: 'transparent',
+          pointRadius: 0,
+          fill: false,
+          tension: 0.3,
+          order: 5
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          labels: {
+            filter: item => !item.text.startsWith('_'),
+            usePointStyle: true,
+            pointStyle: 'circle',
+            padding: 16,
+            font: { size: 11, weight: 500 }
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              if (ctx.dataset.label.startsWith('_')) return null;
+              return `${ctx.dataset.label}: ${ctx.parsed.y.toExponential(4)}`;
+            }
+          },
+          filter: item => !item.dataset.label.startsWith('_')
+        },
+        annotation: undefined
+      },
+      scales: {
+        x: {
+          title: { display: true, text: 'Epoch', font: { size: 12, weight: 600 }, color: '#8892b0' },
+          grid: { color: '#2a307022' },
+          ticks: { font: { size: 11 } }
+        },
+        y: {
+          title: { display: true, text: 'Fitness Value', font: { size: 12, weight: 600 }, color: '#8892b0' },
+          grid: { color: '#2a307033' },
+          ticks: {
+            font: { size: 11 },
+            callback: v => {
+              if (Math.abs(v) >= 1000 || (Math.abs(v) < 0.01 && v !== 0)) return v.toExponential(1);
+              return v;
+            }
+          }
+        }
+      }
+    },
+    plugins: [{
+      id: 'peakAnnotation',
+      afterDraw(chart) {
+        const meta = chart.getDatasetMeta(0);
+        if (!meta.data[peakIdx]) return;
+        const pt = meta.data[peakIdx];
+        const ctxDraw = chart.ctx;
+
+        // Glow dot
+        ctxDraw.save();
+        ctxDraw.beginPath();
+        ctxDraw.arc(pt.x, pt.y, 8, 0, Math.PI * 2);
+        ctxDraw.fillStyle = '#00c8a033';
+        ctxDraw.fill();
+        ctxDraw.beginPath();
+        ctxDraw.arc(pt.x, pt.y, 4, 0, Math.PI * 2);
+        ctxDraw.fillStyle = '#00c8a0';
+        ctxDraw.fill();
+
+        // Label
+        const label = `Peak: ${peakBest.toExponential(3)}`;
+        ctxDraw.font = "600 11px 'Inter', sans-serif";
+        ctxDraw.fillStyle = '#00c8a0';
+        ctxDraw.textAlign = 'center';
+        ctxDraw.fillText(label, pt.x, pt.y - 14);
+        ctxDraw.restore();
+      }
+    }]
+  });
+}
+
+/* ============================================================
+   PARSE & RENDER: PROFILING CSV
+   ============================================================ */
+function parseProfilingCSV(text) {
+  const lines = text.trim().split('\n');
+  const epochs = [], fitness = [], selection = [], crossover = [], mutation = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(',').map(c => c.trim());
+    if (cols.length < 5) continue;
+    epochs.push(parseInt(cols[0]));
+    fitness.push(parseFloat(cols[1]));
+    selection.push(parseFloat(cols[2]));
+    crossover.push(parseFloat(cols[3]));
+    mutation.push(parseFloat(cols[4]));
+  }
+
+  // Stats
+  const totals = epochs.map((_, i) => fitness[i] + selection[i] + crossover[i] + mutation[i]);
+  const avgTotal = (totals.reduce((a, b) => a + b, 0) / totals.length).toFixed(0);
+
+  const phaseSums = {
+    Fitness: fitness.reduce((a, b) => a + b, 0),
+    Selection: selection.reduce((a, b) => a + b, 0),
+    Crossover: crossover.reduce((a, b) => a + b, 0),
+    Mutation: mutation.reduce((a, b) => a + b, 0),
+  };
+  const bottleneck = Object.entries(phaseSums).sort((a, b) => b[1] - a[1])[0][0];
+
+  document.getElementById('statAvgTotal').textContent = `${avgTotal} ms`;
+  document.getElementById('statBottleneck').textContent = bottleneck;
+
+  renderProfilingChart(epochs, fitness, selection, crossover, mutation, totals);
+}
+
+function renderProfilingChart(epochs, fitness, selection, crossover, mutation, totals) {
+  const card = document.getElementById('profilingCard');
+  card.classList.add('visible');
+
+  if (profilingChartInstance) profilingChartInstance.destroy();
+
+  const ctx = document.getElementById('profilingChart').getContext('2d');
+
+  profilingChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: epochs.map(e => `Epoch ${e}`),
+      datasets: [
+        {
+          label: 'Fitness Eval',
+          data: fitness,
+          backgroundColor: '#00c8a0cc',
+          borderColor: '#00c8a0',
+          borderWidth: 1,
+          borderRadius: { topLeft: 0, topRight: 0, bottomLeft: 4, bottomRight: 4 }
+        },
+        {
+          label: 'Selection',
+          data: selection,
+          backgroundColor: '#4a9effcc',
+          borderColor: '#4a9eff',
+          borderWidth: 1,
+          borderRadius: 0
+        },
+        {
+          label: 'Crossover',
+          data: crossover,
+          backgroundColor: '#ffb84dcc',
+          borderColor: '#ffb84d',
+          borderWidth: 1,
+          borderRadius: 0
+        },
+        {
+          label: 'Mutation',
+          data: mutation,
+          backgroundColor: '#ff4d6acc',
+          borderColor: '#ff4d6a',
+          borderWidth: 1,
+          borderRadius: { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 }
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          labels: {
+            usePointStyle: true,
+            pointStyle: 'rectRounded',
+            padding: 16,
+            font: { size: 11, weight: 500 }
+          }
+        },
+        tooltip: {
+          callbacks: {
+            afterBody: items => {
+              const idx = items[0].dataIndex;
+              return `\nTotal: ${totals[idx].toFixed(0)} ms`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          stacked: true,
+          title: { display: true, text: 'Epoch', font: { size: 12, weight: 600 }, color: '#8892b0' },
+          grid: { display: false },
+          ticks: { font: { size: 11 } }
+        },
+        y: {
+          stacked: true,
+          title: { display: true, text: 'Time (ms)', font: { size: 12, weight: 600 }, color: '#8892b0' },
+          grid: { color: '#2a307033' },
+          ticks: { font: { size: 11 } }
+        }
+      }
+    },
+    plugins: [{
+      id: 'totalLabels',
+      afterDraw(chart) {
+        const ctx2 = chart.ctx;
+        ctx2.save();
+        ctx2.font = "600 10px 'Inter', sans-serif";
+        ctx2.fillStyle = '#8892b0';
+        ctx2.textAlign = 'center';
+
+        const meta = chart.getDatasetMeta(chart.data.datasets.length - 1);
+        meta.data.forEach((bar, i) => {
+          ctx2.fillText(`${totals[i].toFixed(0)} ms`, bar.x, bar.y - 6);
+        });
+        ctx2.restore();
+      }
+    }]
+  });
+}
+</script>
+</body>
+</html>
