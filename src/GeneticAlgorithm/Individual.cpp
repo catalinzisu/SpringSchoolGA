@@ -101,14 +101,15 @@ void Individual::Crossover(IIndividual& other)
 {
 	size_t numberOfGenes = m_building->GetCubesExistence().size();
 
-	int randomNumber = RandomNumbersGenerator::GenerateIntegerNumberInRange(1, numberOfGenes - 1);
+	int p1 = RandomNumbersGenerator::GenerateIntegerNumberInRange(0, static_cast<int>(numberOfGenes) - 2);
+	int p2 = RandomNumbersGenerator::GenerateIntegerNumberInRange(p1 + 1, static_cast<int>(numberOfGenes) - 1);
 
 	Individual& otherIndividual = dynamic_cast<Individual&> (other);
 
 	std::vector<bool> newCubesExistence = m_building->GetCubesExistence();
 	std::vector<bool> newOtherCubesExistence = otherIndividual.m_building->GetCubesExistence();
 
-	for (size_t index = randomNumber; index < numberOfGenes; ++index)
+	for (size_t index = p1; index < p2; ++index)
 	{
 		newCubesExistence[index] = otherIndividual.m_building->GetCubesExistence()[index];
 		newOtherCubesExistence[index] = m_building->GetCubesExistence()[index];

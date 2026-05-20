@@ -117,27 +117,39 @@ void GeneticAlgorithm::Selection()
 {
 	std::vector<std::shared_ptr<IIndividual>> newPopulation;
 
-	std::vector<double> cumulativeProbabilityOfSelectionVector = CalcutateCumulativeProbabilityOfSelection();
-	std::vector<double> randomNumbers = RandomNumbersGenerator::GenerateRealNumbers(LOWER_BOUND, UPPER_BOUND, m_populationSize);
+	std::shared_ptr<IIndividual> bestIndividual = m_workingPopulation[0];
+	double maxFitness = m_fitnessValues[bestIndividual.get()];
 
-	for (const auto& randomNumber : randomNumbers)
+	for (const auto& individual : m_workingPopulation)
 	{
-		if (IsGraterThan(randomNumber, LOWER_BOUND) &&
-			IsLessThanOrEqualTo(randomNumber, cumulativeProbabilityOfSelectionVector[0]))
+		if (m_fitnessValues[individual.get()] > maxFitness)
 		{
-			newPopulation.push_back(m_workingPopulation[0]);
-			continue;
+			maxFitness = m_fitnessValues[individual.get()];
+			bestIndividual = individual;
 		}
+	}
 
-		for (size_t probabilityIndex = 0; probabilityIndex < cumulativeProbabilityOfSelectionVector.size() - 1; ++probabilityIndex)
+	newPopulation.push_back(bestIndividual);
+
+	for (size_t i = 1; i < m_populationSize; ++i)
+	{
+		std::shared_ptr<IIndividual> tournamentWinner = nullptr;
+		double tournamentMaxFitness = -1.0;
+
+		for (int k = 0; k < 3; ++k)
 		{
-			if (IsGraterThan(randomNumber, cumulativeProbabilityOfSelectionVector[probabilityIndex]) &&
-				IsLessThanOrEqualTo(randomNumber, cumulativeProbabilityOfSelectionVector[probabilityIndex + 1]))
+			int randomIndex = RandomNumbersGenerator::GenerateIntegerNumberInRange(0, static_cast<int>(m_populationSize) - 1);
+			std::shared_ptr<IIndividual> candidate = m_workingPopulation[randomIndex];
+			double candidateFitness = m_fitnessValues[candidate.get()];
+
+			if (tournamentWinner == nullptr || candidateFitness > tournamentMaxFitness)
 			{
-				newPopulation.push_back(m_workingPopulation[probabilityIndex + 1]);
-				break;
+				tournamentMaxFitness = candidateFitness;
+				tournamentWinner = candidate;
 			}
 		}
+
+		newPopulation.push_back(tournamentWinner);
 	}
 
 	m_workingPopulation = newPopulation;
