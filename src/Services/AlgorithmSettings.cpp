@@ -1,6 +1,6 @@
 #include <Services/AlgorithmSettings.h>
 
-AlgorithmSettings* AlgorithmSettings::m_instance = NULL;
+AlgorithmSettings* AlgorithmSettings::m_instance = nullptr;
 
 AlgorithmSettings* AlgorithmSettings::GetInstance()
 {
@@ -72,9 +72,7 @@ const double AlgorithmSettings::GetDensity() const
 
 AlgorithmSettings::AlgorithmSettings()
 {
-	std::ifstream file;
-
-	file.open(FILE_NAME_ALGORITHM_SETTINGS, std::ios::in);
+	std::ifstream file{std::string{FILE_NAME_ALGORITHM_SETTINGS}, std::ios::in};
 	if (file.is_open())
 	{
 		std::string line;
@@ -87,23 +85,23 @@ AlgorithmSettings::AlgorithmSettings()
 
 			if (variable == "NUMBER_OF_EPOCHS")
 			{
-				m_numbeOfEpochs = atoi(value.c_str());
+				m_numbeOfEpochs = std::stoi(value);
 			}
 			else if (variable == "NUMBER_OF_INDIVIDUALS")
 			{
-				m_numberOfIndividuals = atoi(value.c_str());
+				m_numberOfIndividuals = std::stoi(value);
 			}
 			else if (variable == "OX_SIZE")
 			{
-				m_oxSize = atoi(value.c_str());
+				m_oxSize = std::stoi(value);
 			}
 			else if (variable == "OY_SIZE")
 			{
-				m_oySize = atoi(value.c_str());
+				m_oySize = std::stoi(value);
 			}
 			else if (variable == "OZ_SIZE")
 			{
-				m_ozSize = atoi(value.c_str());
+				m_ozSize = std::stoi(value);
 			}
 			else if (variable == "ELEMENT_SIZE")
 			{
@@ -137,6 +135,6 @@ AlgorithmSettings::AlgorithmSettings()
 	}
 	else
 	{
-		std::cerr << "Could not open " + FILE_NAME_ALGORITHM_SETTINGS + " file!";
+		std::cerr << "Could not open " << FILE_NAME_ALGORITHM_SETTINGS << " file!";
 	}
 }

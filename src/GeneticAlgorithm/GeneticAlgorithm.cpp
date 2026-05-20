@@ -1,5 +1,6 @@
 #include <GeneticAlgorithm/GeneticAlgorithm.h>
 #include <fstream>
+#include <chrono>
 
 GeneticAlgorithm::GeneticAlgorithm(
 	std::function<IIndividual* ()> createIndividual,
@@ -19,28 +20,49 @@ void GeneticAlgorithm::Run()
 
 	for (int index = 0; index < m_numberOfEpochs; ++index)
 	{
-		std::cout << std::endl << "Epoch: " << index + 1 << std::endl;
+		std::cout << '\n' << "Epoch: " << index + 1 << '\n';
 
+		auto startFitness = std::chrono::high_resolution_clock::now();
 		m_fitnessValues = CalculateFitnessValues();
+		auto endFitness = std::chrono::high_resolution_clock::now();
+		auto fitnessTime = std::chrono::duration_cast<std::chrono::milliseconds>(endFitness - startFitness).count();
 
+		auto startSelection = std::chrono::high_resolution_clock::now();
 		Selection();
+		auto endSelection = std::chrono::high_resolution_clock::now();
+		auto selectionTime = std::chrono::duration_cast<std::chrono::milliseconds>(endSelection - startSelection).count();
+
+		auto startCrossover = std::chrono::high_resolution_clock::now();
 		Crossover();
+		auto endCrossover = std::chrono::high_resolution_clock::now();
+		auto crossoverTime = std::chrono::duration_cast<std::chrono::milliseconds>(endCrossover - startCrossover).count();
+
+		auto startMutation = std::chrono::high_resolution_clock::now();
 		Mutation();
+		auto endMutation = std::chrono::high_resolution_clock::now();
+		auto mutationTime = std::chrono::duration_cast<std::chrono::milliseconds>(endMutation - startMutation).count();
 
 		WriteWinners(index);
+
+		std::ofstream profileFile("profiling_stats.csv", index == 0 ? std::ios::out : std::ios::app);
+		if (index == 0)
+		{
+			profileFile << "Epoch,FitnessTime_ms,SelectionTime_ms,CrossoverTime_ms,MutationTime_ms\n";
+		}
+		profileFile << index + 1 << "," << fitnessTime << "," << selectionTime << "," << crossoverTime << "," << mutationTime << "\n";
 	}
 }
 
 IIndividual* GeneticAlgorithm::GetWinnerIndividual()
 {
-	double maxValue = 0.0;
-	IIndividual* winner = nullptr;
+	double maxValue{0.0};
+	IIndividual* winner{nullptr};
 
-	for (const auto value : m_fitnessValues)
-		if (value.second > maxValue)
+	for (const auto& [individual, fitness] : m_fitnessValues)
+		if (fitness > maxValue)
 		{
-			maxValue = value.second;
-			winner = value.first;
+			maxValue = fitness;
+			winner = individual;
 		}
 
 	return winner;
@@ -48,11 +70,11 @@ IIndividual* GeneticAlgorithm::GetWinnerIndividual()
 
 void GeneticAlgorithm::InitializePopulation()
 {
-	for (int index = 0; index < m_populationSize; ++index)
+	for (size_t index{0}; index < m_populationSize; ++index)
 	{
-		std::cout << "Created individual " << index + 1 << "\n";
+		std::cout << "Created individual " << index + 1 << '\n';
 
-		m_population.push_back(std::move(std::shared_ptr<IIndividual>(m_createIndividual())));
+		m_population.emplace_back(std::shared_ptr<IIndividual>(m_createIndividual()));
 		m_workingPopulation.push_back(m_population[index]);
 	}
 }
@@ -71,10 +93,10 @@ std::map<IIndividual*, double> GeneticAlgorithm::CalculateFitnessValues()
 
 double GeneticAlgorithm::CalculateSumOfFitnessValues()
 {
-	double sum{};
-	for (const auto& individual : m_workingPopulation)
+	double sum{0.0};
+	for (const auto& [individual, fitness] : m_fitnessValues)
 	{
-		sum += m_fitnessValues[individual.get()];
+		sum += fitness;
 	}
 
 	return sum;
@@ -96,13 +118,13 @@ std::vector<double> GeneticAlgorithm::CalculateProbabilityOfSelection()
 std::vector<double> GeneticAlgorithm::CalcutateCumulativeProbabilityOfSelection()
 {
 	std::vector<double> cumulativeProbabilityOfSelectionVector;
-	std::vector<double> probabilityOfSelectionVector = CalculateProbabilityOfSelection();
+	auto probabilityOfSelectionVector = CalculateProbabilityOfSelection();
 
-	for (int currentIndividualIndex = 0; currentIndividualIndex < m_populationSize; ++currentIndividualIndex)
+	for (size_t currentIndividualIndex{0}; currentIndividualIndex < m_populationSize; ++currentIndividualIndex)
 	{
-		double probability{};
+		double probability{0.0};
 
-		for (int index = 0; index <= currentIndividualIndex; ++index)
+		for (size_t index{0}; index <= currentIndividualIndex; ++index)
 		{
 			probability += probabilityOfSelectionVector[index];
 		}
@@ -117,8 +139,8 @@ void GeneticAlgorithm::Selection()
 {
 	std::vector<std::shared_ptr<IIndividual>> newPopulation;
 
-	std::shared_ptr<IIndividual> bestIndividual = m_workingPopulation[0];
-	double maxFitness = m_fitnessValues[bestIndividual.get()];
+	auto bestIndividual = m_workingPopulation[0];
+	auto maxFitness = m_fitnessValues[bestIndividual.get()];
 
 	for (const auto& individual : m_workingPopulation)
 	{
@@ -131,15 +153,17 @@ void GeneticAlgorithm::Selection()
 
 	newPopulation.push_back(bestIndividual);
 
-	for (size_t i = 1; i < m_populationSize; ++i)
-	{
-		std::shared_ptr<IIndividual> tournamentWinner = nullptr;
-		double tournamentMaxFitness = -1.0;
+	constexpr int kTournamentSize{3};
 
-		for (int k = 0; k < 3; ++k)
+	for (size_t i{1}; i < m_populationSize; ++i)
+	{
+		std::shared_ptr<IIndividual> tournamentWinner{nullptr};
+		double tournamentMaxFitness{-1.0};
+
+		for (int k{0}; k < kTournamentSize; ++k)
 		{
 			int randomIndex = RandomNumbersGenerator::GenerateIntegerNumberInRange(0, static_cast<int>(m_populationSize) - 1);
-			std::shared_ptr<IIndividual> candidate = m_workingPopulation[randomIndex];
+			auto& candidate = m_workingPopulation[randomIndex];
 			double candidateFitness = m_fitnessValues[candidate.get()];
 
 			if (tournamentWinner == nullptr || candidateFitness > tournamentMaxFitness)
@@ -152,7 +176,7 @@ void GeneticAlgorithm::Selection()
 		newPopulation.push_back(tournamentWinner);
 	}
 
-	m_workingPopulation = newPopulation;
+	m_workingPopulation = std::move(newPopulation);
 }
 
 void GeneticAlgorithm::Crossover()
@@ -217,15 +241,15 @@ void GeneticAlgorithm::WriteWinners(int epoch)
 	}
 
 	double bestFitness = m_fitnessValues[winner];
-	double sumFitness = 0.0;
+	double sumFitness{0.0};
 	double worstFitness = m_fitnessValues.begin()->second;
 
-	for (const auto& value : m_fitnessValues)
+	for (const auto& [individual, fitness] : m_fitnessValues)
 	{
-		sumFitness += value.second;
-		if (value.second < worstFitness)
+		sumFitness += fitness;
+		if (fitness < worstFitness)
 		{
-			worstFitness = value.second;
+			worstFitness = fitness;
 		}
 	}
 

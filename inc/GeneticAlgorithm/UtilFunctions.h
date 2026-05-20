@@ -12,5 +12,5 @@ public:
 		double elementSize, double maximStress);
 
 	static std::function<IIndividual* ()> CreateIndividualFromFileFunction(int sizeOx, int sizeOy, int sizeOz,
-		double elementSize, const std::vector<bool>& cubesExistence, double maximStress);
+		double elementSize, const std::vector<uint8_t>& cubesExistence, double maximStress);
 };

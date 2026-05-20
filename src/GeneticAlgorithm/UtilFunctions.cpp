@@ -4,7 +4,7 @@ std::function<IIndividual* ()> UtilFunctions::CreateIndividualFunction(int sizeO
 	double elementSize, double maximStress)
 {
 	return [sizeOx, sizeOy, sizeOz, elementSize, maximStress]() {
-		Individual* individual = new Individual(sizeOx, sizeOy, sizeOz, elementSize);
+		auto* individual = new Individual(sizeOx, sizeOy, sizeOz, elementSize);
 		individual->SetMaximStress(maximStress);
 
 		return individual;
@@ -12,10 +12,10 @@ std::function<IIndividual* ()> UtilFunctions::CreateIndividualFunction(int sizeO
 }
 
 std::function<IIndividual* ()> UtilFunctions::CreateIndividualFromFileFunction(int sizeOx, int sizeOy, int sizeOz,
-	double elementSize, const std::vector<bool>& cubesExistence, double maximStress)
+	double elementSize, const std::vector<uint8_t>& cubesExistence, double maximStress)
 {
 	return [sizeOx, sizeOy, sizeOz, elementSize, cubesExistence, maximStress]() {
-		Individual* individual = new Individual(sizeOx, sizeOy, sizeOz, elementSize, cubesExistence);
+		auto* individual = new Individual(sizeOx, sizeOy, sizeOz, elementSize, cubesExistence);
 		individual->SetMaximStress(maximStress);
 
 		return individual;

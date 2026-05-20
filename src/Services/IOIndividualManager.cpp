@@ -2,29 +2,26 @@
 
 void IOIndividualManager::ReadIndividualsDetailsAndCreateBuildings()
 {
-	std::ifstream file;
+	std::ifstream file{std::string{FILE_NAME_INDIVIDUAL}, std::ios::in};
 
-	std::shared_ptr<Building> readBuilding = nullptr;
-
-	file.open(FILE_NAME_INDIVIDUAL, std::ios::in);
 	if (file.is_open())
 	{
 		int sizeOx, sizeOy, sizeOz;
 		double elementSize;
-		bool cubeExistence;
-		std::vector<bool> cubesExistence;
+		int cubeExistence;
+		std::vector<uint8_t> cubesExistence;
 
 		while (!file.eof())
 		{
 			file >> sizeOx >> sizeOy >> sizeOz >> elementSize;
 
-			for (int index = 0; index < sizeOx * sizeOy * sizeOz; ++index)
+			for (int index{0}; index < sizeOx * sizeOy * sizeOz; ++index)
 			{
 				file >> cubeExistence;
-				cubesExistence.emplace_back(cubeExistence);
+				cubesExistence.emplace_back(static_cast<uint8_t>(cubeExistence));
 			}
 
-			readBuilding = Individual::CreateBuildingFromDetails(sizeOx, sizeOy, sizeOz, elementSize, cubesExistence);
+			auto readBuilding = Individual::CreateBuildingFromDetails(sizeOx, sizeOy, sizeOz, elementSize, cubesExistence);
 			Scene scene;
 			scene.Show(readBuilding);
 
@@ -34,32 +31,30 @@ void IOIndividualManager::ReadIndividualsDetailsAndCreateBuildings()
 	}
 	else
 	{
-		std::cerr << "Could not open " + FILE_NAME_INDIVIDUAL + " file!";
+		std::cerr << "Could not open " << FILE_NAME_INDIVIDUAL << " file!";
 	}
 }
 
-std::vector<bool> IOIndividualManager::ReadInitialIndividual(int individualSize)
+std::vector<uint8_t> IOIndividualManager::ReadInitialIndividual(int individualSize)
 {
-	std::ifstream file;
+	std::ifstream file{std::string{FILE_NAME_INITIAL_INDIVIDUAL}, std::ios::in};
 
-	file.open(FILE_NAME_INITIAL_INDIVIDUAL, std::ios::in);
-
-	bool cubeExistence;
-	std::vector<bool> cubesExistence;
+	int cubeExistence;
+	std::vector<uint8_t> cubesExistence;
 
 	if (file.is_open())
 	{
-		for (int index = 0; index < individualSize; ++index)
+		for (int index{0}; index < individualSize; ++index)
 		{
 			file >> cubeExistence;
-			cubesExistence.emplace_back(cubeExistence);
+			cubesExistence.emplace_back(static_cast<uint8_t>(cubeExistence));
 		}
 
 		file.close();
 	}
 	else
 	{
-		std::cerr << "Could not open " + FILE_NAME_INITIAL_INDIVIDUAL + " file!";
+		std::cerr << "Could not open " << FILE_NAME_INITIAL_INDIVIDUAL << " file!";
 	}
 
 	return cubesExistence;
@@ -67,43 +62,37 @@ std::vector<bool> IOIndividualManager::ReadInitialIndividual(int individualSize)
 
 void IOIndividualManager::WriteIndividualDetailsInFile(IIndividual* individual)
 {
-	std::ofstream file;
-
-	file.open(FILE_NAME_INDIVIDUAL);
+	std::ofstream file{std::string{FILE_NAME_INDIVIDUAL}};
 
 	if (file.is_open())
 	{
-		Individual* castedIndividual = dynamic_cast<Individual*>(individual);
+		auto* castedIndividual = dynamic_cast<Individual*>(individual);
 		file << *castedIndividual;
 		file.close();
 	}
 	else
 	{
-		std::cerr << "Could not open " + FILE_NAME_INDIVIDUAL + " file!";
+		std::cerr << "Could not open " << FILE_NAME_INDIVIDUAL << " file!";
 	}
 }
 
 void IOIndividualManager::WriteIndividualValueInFile(int epoch, double fitnessValue, bool append)
 {
-	std::ofstream file;
-
-	if (append)
-		file.open(FILE_NAME_INDIVIDUAL_VALUES, std::ios_base::app);
-	else
-		file.open(FILE_NAME_INDIVIDUAL_VALUES);
+	std::ofstream file{std::string{FILE_NAME_INDIVIDUAL_VALUES},
+		append ? std::ios_base::app : std::ios_base::out};
 
 	if (file.is_open())
 	{
 		if (!append)
 		{
-			file << "EPOCH" << "," << "VALUE" << std::endl;
+			file << "EPOCH" << "," << "VALUE" << '\n';
 		}
 
-		file << epoch << "," << fitnessValue << std::endl;
+		file << epoch << "," << fitnessValue << '\n';
 		file.close();
 	}
 	else
 	{
-		std::cerr << "Could not open " + FILE_NAME_INDIVIDUAL_VALUES + " file!";
+		std::cerr << "Could not open " << FILE_NAME_INDIVIDUAL_VALUES << " file!";
 	}
 }

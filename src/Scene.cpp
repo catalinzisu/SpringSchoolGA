@@ -45,28 +45,28 @@ std::shared_ptr<Building> Scene::CreateComplexWallScene()
 
 	customBuilding->AddConstraints();
 
-	std::vector<bool> importanceForEliminatingCubes = std::vector<bool>(20 * 8 * 5, true);
+	std::vector<uint8_t> importanceForEliminatingCubes(20 * 8 * 5, 1);
 
-	for (int i = 0; i < importanceForEliminatingCubes.size(); ++i)
-		importanceForEliminatingCubes[i] = false;
+	for (size_t i{0}; i < importanceForEliminatingCubes.size(); ++i)
+		importanceForEliminatingCubes[i] = 0;
 
 	customBuilding->EliminateCubesBasedOnCubesExistence(importanceForEliminatingCubes);
 
-	for (int i = 0; i < importanceForEliminatingCubes.size(); ++i)
-		importanceForEliminatingCubes[i] = true;
+	for (size_t i{0}; i < importanceForEliminatingCubes.size(); ++i)
+		importanceForEliminatingCubes[i] = 1;
 
 	customBuilding->AddCubesBasedOnCubesExistence(importanceForEliminatingCubes);
 
-	importanceForEliminatingCubes[0] = false;
-	importanceForEliminatingCubes[1] = false;
-	importanceForEliminatingCubes[19] = false;
-	importanceForEliminatingCubes[18] = false;
+	importanceForEliminatingCubes[0] = 0;
+	importanceForEliminatingCubes[1] = 0;
+	importanceForEliminatingCubes[19] = 0;
+	importanceForEliminatingCubes[18] = 0;
 
 	customBuilding->EliminateCubesBasedOnCubesExistence(importanceForEliminatingCubes);
 
-	importanceForEliminatingCubes[1] = true;
-	importanceForEliminatingCubes[5] = true;
-	importanceForEliminatingCubes[19] = true;
+	importanceForEliminatingCubes[1] = 1;
+	importanceForEliminatingCubes[5] = 1;
+	importanceForEliminatingCubes[19] = 1;
 
 	customBuilding->AddCubesBasedOnCubesExistence(importanceForEliminatingCubes);
 

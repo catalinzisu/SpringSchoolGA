@@ -17,7 +17,7 @@ class IOIndividualManager
 {
 public:
 	static void ReadIndividualsDetailsAndCreateBuildings();
-	static std::vector<bool> ReadInitialIndividual(int individualSize);
+	static std::vector<uint8_t> ReadInitialIndividual(int individualSize);
 
 	static void WriteIndividualDetailsInFile(IIndividual* individual);
 	static void WriteIndividualValueInFile(int epoch, double fitnessValue, bool append);

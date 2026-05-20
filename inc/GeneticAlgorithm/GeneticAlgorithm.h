@@ -30,23 +30,23 @@ public:
 
 	void Run();
 
-	IIndividual* GetWinnerIndividual();
+	[[nodiscard]] IIndividual* GetWinnerIndividual();
 
 private:
 	void InitializePopulation();
 
-	std::map<IIndividual*, double> CalculateFitnessValues();
+	[[nodiscard]] std::map<IIndividual*, double> CalculateFitnessValues();
 
-	double CalculateSumOfFitnessValues();
-	std::vector<double> CalculateProbabilityOfSelection();
-	std::vector<double> CalcutateCumulativeProbabilityOfSelection();
+	[[nodiscard]] double CalculateSumOfFitnessValues();
+	[[nodiscard]] std::vector<double> CalculateProbabilityOfSelection();
+	[[nodiscard]] std::vector<double> CalcutateCumulativeProbabilityOfSelection();
 
 	void Selection();
 	void Crossover();
 	void Mutation();
 
-	bool IsGraterThan(double value, double lowerBound) const;
-	bool IsLessThanOrEqualTo(double value, double upperBound) const;
+	[[nodiscard]] bool IsGraterThan(double value, double lowerBound) const;
+	[[nodiscard]] bool IsLessThanOrEqualTo(double value, double upperBound) const;
 
 	void WriteWinners(int epoch);
 
@@ -61,6 +61,6 @@ private:
 	size_t m_populationSize;
 	size_t m_numberOfEpochs;
 
-	double m_crossoverProbability;
-	double m_mutationProbability;
+	double m_crossoverProbability{0.0};
+	double m_mutationProbability{0.0};
 };

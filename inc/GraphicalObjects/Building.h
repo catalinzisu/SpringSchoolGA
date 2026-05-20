@@ -1,6 +1,10 @@
 #pragma once
 
 #include <memory>
+#include <unordered_map>
+#include <string>
+#include <cmath>
+#include <cstdint>
 
 #include <fea/ChMesh.h>
 
@@ -29,16 +33,16 @@ public:
 	
 	~Building() = default;
 
-	const std::shared_ptr<chrono::fea::ChMesh> GetMesh() const;
-	const std::vector<bool> GetCubesExistence() const;
-	const std::shared_ptr<chrono::ChSystemSMC> GetSystem() const;
+	[[nodiscard]] const std::shared_ptr<chrono::fea::ChMesh> GetMesh() const;
+	[[nodiscard]] const std::vector<uint8_t>& GetCubesExistence() const;
+	[[nodiscard]] const std::shared_ptr<chrono::ChSystemSMC> GetSystem() const;
 
 	void Build();
 
 	void AddConstraints();
 
-	void EliminateCubesBasedOnCubesExistence(const std::vector<bool>& importance);
-	void AddCubesBasedOnCubesExistence(const std::vector<bool>& importance);
+	void EliminateCubesBasedOnCubesExistence(const std::vector<uint8_t>& importance);
+	void AddCubesBasedOnCubesExistence(const std::vector<uint8_t>& importance);
 
 private:
 	std::vector<std::shared_ptr<chrono::fea::ChNodeFEAxyz>> BuildLateralNodesForLayers(
@@ -51,18 +55,11 @@ private:
 		const std::shared_ptr<chrono::ChBody>& base);
 	void EliminateConstaints();
 
-	int GetNodePositionInVector(const std::shared_ptr<chrono::fea::ChNodeFEAxyz>& node,
-		const std::vector<std::shared_ptr<chrono::fea::ChNodeFEAbase>>& nodes);
 	int GetElementPositionFromImportanceVector(int position);
 
-	bool NodeAlreadyExistsInMesh(const std::shared_ptr<chrono::fea::ChNodeFEAxyz>& node);
-	bool ExistsAnotherElementWithNode(const std::shared_ptr<chrono::fea::ChNodeFEAxyz>& node,
-		const std::vector<std::shared_ptr<chrono::fea::ChElementBase>>& elements);
+	std::string GetNodeKey(double x, double y, double z) const;
 
-	bool HasAddedElementNeighbors(int position, const std::vector<bool>& importance);
-
-	bool AreNodesEqual(const std::shared_ptr<chrono::fea::ChNodeFEAxyz>& lhsNode, 
-		const std::shared_ptr<chrono::fea::ChNodeFEAxyz>& rhsNode);
+	bool HasAddedElementNeighbors(int position, const std::vector<uint8_t>& importance);
 
 private:
 	std::shared_ptr<chrono::fea::ChMesh> m_mesh;
@@ -71,8 +68,9 @@ private:
 	uint16_t m_numberOfCubesOy;
 	uint16_t m_numberOfCubesOz;
 
-	double m_cubeSize;
-	std::vector<bool> m_cubesExistence;
+	double m_cubeSize{0.0};
+	std::vector<uint8_t> m_cubesExistence;
+	std::unordered_map<std::string, std::shared_ptr<chrono::fea::ChNodeFEAxyz>> m_nodeMap;
 
 	BodyReference m_base;
 

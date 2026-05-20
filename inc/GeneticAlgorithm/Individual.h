@@ -1,8 +1,9 @@
 #pragma once
 
 #include <vector>
-#include <math.h>
+#include <cmath>
 #include <iostream>
+#include <cstdint>
 
 #include <fea/ChMesh.h>
 
@@ -20,7 +21,7 @@ class Individual : public IIndividual
 {
 public:
 	Individual(int sizeOx, int sizeOy, int sizeOz, double elementSize);
-	Individual(int sizeOx, int sizeOy, int sizeOz, double elementSize, const std::vector<bool>& cubesExistence);
+	Individual(int sizeOx, int sizeOy, int sizeOz, double elementSize, const std::vector<uint8_t>& cubesExistence);
 
 	Individual(const Individual& another);
 	Individual(Individual&& another) noexcept;
@@ -32,9 +33,9 @@ public:
 
 	void SetMaximStress(double maximStress);
 
-	const std::shared_ptr<Building> GetBuilding() const;
+	[[nodiscard]] const std::shared_ptr<Building> GetBuilding() const;
 
-	double Evaluate() override;
+	[[nodiscard]] double Evaluate() override;
 
 	void Crossover(IIndividual& other) override;
 	void Mutation(double mutationProbability) override;
@@ -44,21 +45,24 @@ public:
 	friend std::ostream& operator<<(std::ostream& out, const Individual& individual);
 
 	static std::shared_ptr<Building> CreateBuildingFromDetails(int sizeOx, int sizeOy, int sizeOz,
-		double elementSize, const std::vector<bool>& cubesExistence);
+		double elementSize, const std::vector<uint8_t>& cubesExistence);
 
 private:
-	int GetNumberOfRemovedElements();
-	double SimulateAndGetMaximStress();
-	bool IsOnTopLayer(size_t possition);
+	[[nodiscard]] int GetNumberOfRemovedElements();
+	[[nodiscard]] double SimulateAndGetMaximStress();
+	[[nodiscard]] bool IsOnTopLayer(size_t possition);
 
 private:
-	std::shared_ptr<Building> m_building;
+	std::shared_ptr<Building> m_building{nullptr};
 
-	double m_maximStress;
-	int m_sizeOx;
-	int m_sizeOy;
-	int m_sizeOz;
-	double m_elementSize;
+	double m_maximStress{0.0};
+	int m_sizeOx{0};
+	int m_sizeOy{0};
+	int m_sizeOz{0};
+	double m_elementSize{0.0};
 
-	std::vector<bool> m_initialGenes;
+	std::vector<uint8_t> m_initialGenes;
+
+	bool m_isDirty{true};
+	double m_cachedStress{0.0};
 };
